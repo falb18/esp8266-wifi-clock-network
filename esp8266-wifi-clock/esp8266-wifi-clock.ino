@@ -30,6 +30,16 @@ unsigned int secs_units = 0, secs_tens = 0;
 unsigned short sec_units_prev = 0, sec_units_curr = 0, sec_tens_prev = 0, sec_tens_curr = 0;
 bool scroll_sec_units = false, scroll_sec_tens = false;
 
+/* These counters keep track of the previous and current minutes. They are needed for the vertical scrolling effect */
+unsigned int min_units = 9, min_tens = 5;
+unsigned short min_units_prev = 0, min_units_curr = 0, min_tens_prev = 0, min_tens_curr = 0;
+bool scroll_min_units = false, scroll_min_tens = false;
+
+/* These counters keep track of the previous and current hour. They are needed for the vertical scrolling effect */
+unsigned int hour_units = 3, hour_tens = 2;
+unsigned short hour_units_prev = 0, hour_units_curr = 0, hour_tens_prev = 0, hour_tens_curr = 0;
+bool scroll_hour_units = false, scroll_hour_tens = false;
+
 unsigned int z_PosX = 0;
 
 bool f_tckr1s = false;
@@ -46,6 +56,36 @@ void helpArr_init(void)
     if (j > 7) {
       j = 0;
       k++;
+    }
+  }
+}
+
+void char2Arr(unsigned short ch, int PosX, short PosY) { //characters into arr
+  int i, j, k, l, m, o1, o2, o3, o4;  //in LEDarr
+  PosX++;
+  k = ch - 32;                        //ASCII position in font
+  if ((k >= 0) && (k < 96))           //character found in font?
+  {
+    o4 = font1[k][0];                 //character width
+    o3 = 1 << (o4 - 2);
+    for (i = 0; i < o4; i++) {
+      if (((PosX - i <= maxPosX) && (PosX - i >= 0))
+              && ((PosY > -8) && (PosY < 8))) //within matrix?
+      {
+        o1 = helpArrPos[PosX - i];
+        o2 = helpArrMAX[PosX - i];
+        for (j = 0; j < 8; j++) {
+          if (((PosY >= 0) && (PosY <= j)) || ((PosY < 0) && (j < PosY + 8))) //scroll vertical
+          {
+            l = font1[k][j + 1];
+            m = (l & (o3 >> i));  //e.g. o4=7  0zzzzz0, o4=4  0zz0
+            if (m > 0)
+              LEDarr[o2][j - PosY] = LEDarr[o2][j - PosY] | (o1);  //set point
+            else
+              LEDarr[o2][j - PosY] = LEDarr[o2][j - PosY] & (~o1); //clear point
+          }
+        }
+      }
     }
   }
 }
@@ -146,6 +186,18 @@ void loop()
       sec_tens_prev = sec_tens_curr;
       sec_tens_curr = secs_tens;
 
+      // Store the previous minutes
+      min_units_prev = min_units_curr;
+      min_units_curr = min_units;
+      min_tens_prev = min_tens_curr;
+      min_tens_curr = min_tens;
+
+      // Store the previous hour
+      hour_units_prev = hour_units_curr;
+      hour_units_curr = hour_units;
+      hour_tens_prev = hour_tens_curr;
+      hour_tens_curr = hour_tens;
+
       f_tckr1s = false;
     }
 
@@ -175,8 +227,7 @@ void loop()
           scroll_sec_units = false;
           f_scrollend_y = true;
         }
-      }
-      else {
+      } else {
         char22Arr(48 + secs_units, z_PosX - 27, 0);
       }
 
@@ -188,9 +239,46 @@ void loop()
         
         if (y == 0)
           scroll_sec_tens = false;
-      }
-      else {
+      } else {
         char22Arr(48 + secs_tens, z_PosX - 23, 0);
+      }
+
+      if (scroll_min_units == true) {
+        char2Arr(48 + min_units_curr, z_PosX - 18, y);
+        char2Arr(48 + min_units_prev, z_PosX - 18, y + y1);
+        if (y == 0)
+          scroll_min_units = false;
+      } else {
+        char2Arr(48 + min_units, z_PosX - 18, 0);
+      }
+
+      if (scroll_min_tens == true) {
+        char2Arr(48 + min_tens_curr, z_PosX - 13, y);
+        char2Arr(48 + min_tens_prev, z_PosX - 13, y + y1);
+        if (y == 0)
+          scroll_min_tens = false;
+      } else {
+        char2Arr(48 + min_tens, z_PosX - 13, 0);
+      }
+
+      char2Arr(':', z_PosX - 10 + x, 0);
+
+      if (scroll_hour_units == true) {
+        char2Arr(48 + hour_units_curr, z_PosX - 4, y);
+        char2Arr(48 + hour_units_prev, z_PosX - 4, y + y1);
+        if (y == 0)
+          scroll_hour_units = false;
+      } else {
+        char2Arr(48 + hour_units, z_PosX - 4, 0);
+      }
+
+      if (scroll_hour_tens == true) {
+        char2Arr(48 + hour_tens_curr, z_PosX + 1, y);
+        char2Arr(48 + hour_tens_prev, z_PosX + 1, y + y1);
+        if (y == 0)
+          scroll_hour_tens = false;
+      } else {
+        char2Arr(48 + hour_tens, z_PosX + 1, 0);
       }
 
       refresh_display();
@@ -228,6 +316,31 @@ void update_time_values()
   }
 
   if (secs_tens == 6) {
+    min_units++;
     secs_tens = 0;
+    scroll_min_units = true;
+  }
+
+  if (min_units == 10) {
+    min_tens++;
+    min_units = 0;
+    scroll_min_tens = true;
+  }
+
+  if (min_tens == 6) {
+    hour_units++;
+    min_tens = 0;
+    scroll_hour_units = true;
+  }
+
+  if (hour_units == 10) {
+      hour_tens++;
+      hour_units = 0;
+      scroll_hour_tens = 1;
+  }
+  if ((hour_tens == 2) && (hour_units == 4)) {
+      hour_units = 0;
+      hour_tens = 0;
+      scroll_hour_tens = 1;
   }
 }

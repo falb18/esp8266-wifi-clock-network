@@ -26,18 +26,18 @@ unsigned short helpArrMAX[MAX_DEVICES * 8];
 unsigned short helpArrPos[MAX_DEVICES * 8];  
 
 /* These counters keep track of the previous and current seconds. They are needed for the vertical scrolling effect */
-unsigned int secs_units = 0, secs_tens = 0;
-unsigned short sec_units_prev = 0, sec_units_curr = 0, sec_tens_prev = 0, sec_tens_curr = 0;
+byte secs_units = 5, secs_tens = 5;
+byte sec_units_prev = 0, sec_units_curr = 0, sec_tens_prev = 0, sec_tens_curr = 0;
 bool scroll_sec_units = false, scroll_sec_tens = false;
 
 /* These counters keep track of the previous and current minutes. They are needed for the vertical scrolling effect */
-unsigned int min_units = 9, min_tens = 5;
-unsigned short min_units_prev = 0, min_units_curr = 0, min_tens_prev = 0, min_tens_curr = 0;
+byte min_units = 9, min_tens = 5;
+byte min_units_prev = 0, min_units_curr = 0, min_tens_prev = 0, min_tens_curr = 0;
 bool scroll_min_units = false, scroll_min_tens = false;
 
 /* These counters keep track of the previous and current hour. They are needed for the vertical scrolling effect */
-unsigned int hour_units = 3, hour_tens = 2;
-unsigned short hour_units_prev = 0, hour_units_curr = 0, hour_tens_prev = 0, hour_tens_curr = 0;
+byte hour_units = 3, hour_tens = 2;
+byte hour_units_prev = 0, hour_units_curr = 0, hour_tens_prev = 0, hour_tens_curr = 0;
 bool scroll_hour_units = false, scroll_hour_tens = false;
 
 unsigned int z_PosX = 0;
@@ -60,7 +60,7 @@ void helpArr_init(void)
   }
 }
 
-void char2Arr(unsigned short ch, int PosX, short PosY) { //characters into arr
+void char2Arr(byte ch, int PosX, short PosY) { //characters into arr
   int i, j, k, l, m, o1, o2, o3, o4;  //in LEDarr
   PosX++;
   k = ch - 32;                        //ASCII position in font
@@ -90,7 +90,7 @@ void char2Arr(unsigned short ch, int PosX, short PosY) { //characters into arr
   }
 }
 
-void char22Arr(unsigned short ch, int PosX, short PosY)
+void char22Arr(byte ch, int PosX, short PosY)
 {
   int i, j, k, l, m, o1, o2, o3, o4;  //in LEDarr
   PosX++;

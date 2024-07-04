@@ -58,6 +58,21 @@ char *str_days_week[] = {
   "SAT"
 };
 
+char *str_months[] = {
+  "JAN",
+  "FEB",
+  "MAR",
+  "APR",
+  "MAY",
+  "JUN",
+  "JUL",
+  "AUG",
+  "SEP",
+  "OCT",
+  "NOV",
+  "DEC"
+};
+
 void helpArr_init(void)
 {
   unsigned short i, j = 0, k = 0;
@@ -311,10 +326,29 @@ void loop()
       }
 
       char2Arr(' ', (d_PosX + 5), 0);
+
+      /* Day of the week */
       char2Arr(str_days_week[0][0], (d_PosX - 1), 0);
       char2Arr(str_days_week[0][1], (d_PosX - 7), 0);
       char2Arr(str_days_week[0][2], (d_PosX - 13), 0);
       char2Arr(' ', (d_PosX - 19), 0);
+
+      /* Day */
+      char2Arr(48 + 0, (d_PosX - 24), 0);
+      char2Arr(48 + 4, (d_PosX - 30), 0);
+      char2Arr(' ', (d_PosX - 39), 0);
+
+      /* Month */
+      char2Arr(str_months[6][0], (d_PosX - 43), 0);
+      char2Arr(str_months[6][1], (d_PosX - 49), 0);
+      char2Arr(str_months[6][2], (d_PosX - 55), 0);
+      char2Arr(' ', (d_PosX - 61), 0);
+
+      /* Year */
+      char2Arr('2', d_PosX - 68, 0);
+      char2Arr('0', d_PosX - 74, 0);
+      char2Arr('2', d_PosX - 80, 0);
+      char2Arr('4', d_PosX - 86, 0);
 
       refresh_display();
       if (f_scrollend_y == true) {

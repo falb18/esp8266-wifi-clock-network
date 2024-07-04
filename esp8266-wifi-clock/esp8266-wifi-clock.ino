@@ -14,6 +14,8 @@
 #define DATA_PIN  D7  // or MOSI
 #define CS_PIN    D8  // or CS
 
+#define MAX_POS_SCROLL_X  101
+
 void timer50ms();
 
 MD_MAX72XX led_matrix = MD_MAX72XX(HARDWARE_TYPE, D7, D5, D8, MAX_DEVICES);
@@ -26,24 +28,35 @@ unsigned short helpArrMAX[MAX_DEVICES * 8];
 unsigned short helpArrPos[MAX_DEVICES * 8];  
 
 /* These counters keep track of the previous and current seconds. They are needed for the vertical scrolling effect */
-byte secs_units = 5, secs_tens = 5;
+byte secs_units = 0, secs_tens = 4;
 byte sec_units_prev = 0, sec_units_curr = 0, sec_tens_prev = 0, sec_tens_curr = 0;
 bool scroll_sec_units = false, scroll_sec_tens = false;
 
 /* These counters keep track of the previous and current minutes. They are needed for the vertical scrolling effect */
-byte min_units = 9, min_tens = 5;
+byte min_units = 0, min_tens = 0;
 byte min_units_prev = 0, min_units_curr = 0, min_tens_prev = 0, min_tens_curr = 0;
 bool scroll_min_units = false, scroll_min_tens = false;
 
 /* These counters keep track of the previous and current hour. They are needed for the vertical scrolling effect */
-byte hour_units = 3, hour_tens = 2;
+byte hour_units = 0, hour_tens = 0;
 byte hour_units_prev = 0, hour_units_curr = 0, hour_tens_prev = 0, hour_tens_curr = 0;
 bool scroll_hour_units = false, scroll_hour_tens = false;
 
 unsigned int z_PosX = 0;
+signed int d_PosX = 0;
 
 bool f_tckr1s = false;
 bool f_tckr50ms = false;
+
+char *str_days_week[] = {
+  "SUN",
+  "MON",
+  "TUE",
+  "WEN",
+  "THU",
+  "FRI",
+  "SAT"
+};
 
 void helpArr_init(void)
 {
@@ -147,9 +160,10 @@ void loop()
   signed int y = 0, y1 = 0, y2 = 0, y3=0;
   bool updown = true;
   bool f_scrollend_y = false;
-  unsigned int f_scroll_x = false;
+  bool f_scroll_x = false;
 
   z_PosX = maxPosX;
+  d_PosX = -8;
 
   if (updown == false) {
       y2 = -9;
@@ -199,6 +213,10 @@ void loop()
       hour_tens_curr = hour_tens;
 
       f_tckr1s = false;
+
+      if ((secs_units == 5) && (secs_tens == 4)) {
+        f_scroll_x = true;
+      }
     }
 
     /* The following part is executed every 50ms to control the scrolling speed */
@@ -206,9 +224,20 @@ void loop()
         
       f_tckr50ms = false;
 
+      if (f_scroll_x == true) {
+        z_PosX++;
+        d_PosX++;
+        if (d_PosX == MAX_POS_SCROLL_X)
+          z_PosX = 0;
+        if (z_PosX == maxPosX) {
+          f_scroll_x = false;
+          d_PosX = -8;
+        }
+      }
+
       // Scroll the first digit in the seconds value
       if (scroll_sec_units == true) {
-        if (updown == 1) {
+        if (updown == true) {
           y--;
         } else {
           y++;
@@ -280,6 +309,12 @@ void loop()
       } else {
         char2Arr(48 + hour_tens, z_PosX + 1, 0);
       }
+
+      char2Arr(' ', (d_PosX + 5), 0);
+      char2Arr(str_days_week[0][0], (d_PosX - 1), 0);
+      char2Arr(str_days_week[0][1], (d_PosX - 7), 0);
+      char2Arr(str_days_week[0][2], (d_PosX - 13), 0);
+      char2Arr(' ', (d_PosX - 19), 0);
 
       refresh_display();
       if (f_scrollend_y == true) {

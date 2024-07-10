@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include <ESP8266WiFi.h>
+#include <DS3231.h>
 #include <MD_MAX72xx.h>
 #include <TickTwo.h>
 
@@ -19,6 +20,10 @@
 void timer50ms();
 
 MD_MAX72XX led_matrix = MD_MAX72XX(HARDWARE_TYPE, D7, D5, D8, MAX_DEVICES);
+
+DS3231 rtc;
+RTClib rtc_lib;
+DateTime date_time;
 
 TickTwo ticker(timer50ms, 50, 0, MILLIS);
 
@@ -165,6 +170,28 @@ void setup()
 {
   Serial.begin(115200);
   led_matrix.begin();
+  
+  /* The default pins for I2C are:
+   * SDA = GPIO5
+   * SCL = GPIO4
+   */
+  Wire.begin();
+  date_time = rtc_lib.now();
+
+  Serial.println();
+  Serial.print(date_time.year(), DEC);
+  Serial.print('/');
+  Serial.print(date_time.month(), DEC);
+  Serial.print('/');
+  Serial.print(date_time.day(), DEC);
+  Serial.print(' ');
+  Serial.print(date_time.hour(), DEC);
+  Serial.print(':');
+  Serial.print(date_time.minute(), DEC);
+  Serial.print(':');
+  Serial.print(date_time.second(), DEC);
+  Serial.println();
+
   helpArr_init();
   ticker.start();
 }

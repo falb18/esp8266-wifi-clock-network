@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdint.h>
+#include <string.h>
 
 #include <ESP8266WiFi.h>
 #include <DS3231.h>
@@ -33,7 +35,7 @@ unsigned short helpArrMAX[MAX_DEVICES * 8];
 unsigned short helpArrPos[MAX_DEVICES * 8];  
 
 /* These counters keep track of the previous and current seconds. They are needed for the vertical scrolling effect */
-byte secs_units = 0, secs_tens = 4;
+byte secs_units = 0, secs_tens = 0;
 byte sec_units_prev = 0, sec_units_curr = 0, sec_tens_prev = 0, sec_tens_curr = 0;
 bool scroll_sec_units = false, scroll_sec_tens = false;
 
@@ -47,23 +49,29 @@ byte hour_units = 0, hour_tens = 0;
 byte hour_units_prev = 0, hour_units_curr = 0, hour_tens_prev = 0, hour_tens_curr = 0;
 bool scroll_hour_units = false, scroll_hour_tens = false;
 
+uint8_t day_week, day, month, year;
+
 unsigned int z_PosX = 0;
 signed int d_PosX = 0;
 
 bool f_tckr1s = false;
 bool f_tckr50ms = false;
 
-char *str_days_week[] = {
-  "SUN",
+/* Two numbers + Null character */
+char str_day[3] = {'0', '0', 0};
+
+const char *str_days_week[] = {
   "MON",
   "TUE",
   "WEN",
   "THU",
   "FRI",
-  "SAT"
+  "SAT",
+  "SUN"
 };
 
-char *str_months[] = {
+const char *str_months[] = {
+  NULL, // This is left null since the range of the values for the month are 1 - 12.
   "JAN",
   "FEB",
   "MAR",
@@ -77,6 +85,9 @@ char *str_months[] = {
   "NOV",
   "DEC"
 };
+
+/* Two numbers + Null character */
+char str_year[3] = {'0', '0', 0};
 
 void helpArr_init(void)
 {
@@ -194,6 +205,8 @@ void setup()
 
   helpArr_init();
   ticker.start();
+
+  request_time_date();
 }
 
 void loop()
@@ -355,27 +368,27 @@ void loop()
       char2Arr(' ', (d_PosX + 5), 0);
 
       /* Day of the week */
-      char2Arr(str_days_week[0][0], (d_PosX - 1), 0);
-      char2Arr(str_days_week[0][1], (d_PosX - 7), 0);
-      char2Arr(str_days_week[0][2], (d_PosX - 13), 0);
+      char2Arr(str_days_week[day_week][0], (d_PosX - 1), 0);
+      char2Arr(str_days_week[day_week][1], (d_PosX - 7), 0);
+      char2Arr(str_days_week[day_week][2], (d_PosX - 13), 0);
       char2Arr(' ', (d_PosX - 19), 0);
 
       /* Day */
-      char2Arr(48 + 0, (d_PosX - 24), 0);
-      char2Arr(48 + 4, (d_PosX - 30), 0);
+      char2Arr(str_day[0], (d_PosX - 24), 0);
+      char2Arr(str_day[1], (d_PosX - 30), 0);
       char2Arr(' ', (d_PosX - 39), 0);
 
       /* Month */
-      char2Arr(str_months[6][0], (d_PosX - 43), 0);
-      char2Arr(str_months[6][1], (d_PosX - 49), 0);
-      char2Arr(str_months[6][2], (d_PosX - 55), 0);
+      char2Arr(str_months[month][0], (d_PosX - 43), 0);
+      char2Arr(str_months[month][1], (d_PosX - 49), 0);
+      char2Arr(str_months[month][2], (d_PosX - 55), 0);
       char2Arr(' ', (d_PosX - 61), 0);
 
       /* Year */
       char2Arr('2', d_PosX - 68, 0);
       char2Arr('0', d_PosX - 74, 0);
-      char2Arr('2', d_PosX - 80, 0);
-      char2Arr('4', d_PosX - 86, 0);
+      char2Arr(str_year[0], d_PosX - 80, 0);
+      char2Arr(str_year[1], d_PosX - 86, 0);
 
       refresh_display();
       if (f_scrollend_y == true) {
@@ -439,4 +452,29 @@ void update_time_values()
       hour_tens = 0;
       scroll_hour_tens = 1;
   }
+}
+
+void request_time_date(void)
+{
+  date_time = rtc_lib.now();
+
+  uint8_t second = date_time.second();
+  uint8_t minute = date_time.minute();
+  uint8_t hour = date_time.hour();
+  day_week = rtc.getDoW();
+  day = date_time.day();
+  month = date_time.month();
+  year = date_time.year();
+  
+  secs_units = (second % 10);
+  secs_tens = (second / 10);
+
+  min_units = (minute % 10);
+  min_tens = (minute / 10);
+
+  hour_units = (hour % 10);
+  hour_tens = (hour / 10);
+
+  sprintf(str_day, "%02u", day);
+  sprintf(str_year, "%02u", year);
 }

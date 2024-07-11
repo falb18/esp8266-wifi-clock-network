@@ -204,6 +204,7 @@ void setup()
   Serial.println();
 
   helpArr_init();
+  connect_wifi_network();
   ticker.start();
 
   request_time_date();
@@ -416,6 +417,11 @@ void refresh_display()
   led_matrix.control(MD_MAX72XX::UPDATE, MD_MAX72XX::ON);
 }
 
+void clear_led_matrix_buffer()
+{
+  memset(LEDarr, 0x00, sizeof(LEDarr));
+}
+
 void update_time_values()
 {
   if (secs_units == 10) {
@@ -477,4 +483,73 @@ void request_time_date(void)
 
   sprintf(str_day, "%02u", day);
   sprintf(str_year, "%02u", year);
+}
+
+bool connect_wifi_network()
+{
+  int numAttempts = 0;
+  
+  if (WiFi.SSID() == "")
+  {
+    Serial.println("No WiFi network saved.");
+    return false;
+  }
+
+  /* In case there is a WiFi network saved, try to establish a connection to it */
+  Serial.print("Attempting connection to WiFi network: ");
+  Serial.println(WiFi.SSID().c_str());
+  WiFi.begin(WiFi.SSID().c_str(), WiFi.psk().c_str());
+
+  char2Arr('W', 28, 0);
+  char2Arr('i', 22, 0);
+  char2Arr('-', 18, 0);
+  char2Arr('F', 12, 0);
+  char2Arr('i', 6, 0);
+
+  refresh_display(); 
+
+  while(numAttempts < WL_MAX_ATTEMPT_CONNECTION)
+  {
+    if (WiFi.status() != WL_CONNECTED)
+    {
+      delay(500);
+      Serial.print(".");
+      numAttempts++;
+    }
+    else
+    {
+      break;
+    }
+  }
+
+  /* Since it is not possible to connect to the WiFi network, then launch
+   * smartconfig to allow the user to give new WiFi credentials
+   */
+  if (numAttempts >= WL_MAX_ATTEMPT_CONNECTION)
+  {
+    Serial.println("Connection failed.");
+    clear_led_matrix_buffer();
+    char2Arr('E', 25, 0);
+    char2Arr('r', 19, 0);
+    char2Arr('r', 12, 0);
+    char2Arr('!', 6, 0);
+    refresh_display(); 
+    delay(2000);
+    return false;
+  }
+
+  Serial.println();
+  Serial.println("WiFi connected.");
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
+
+  clear_led_matrix_buffer();
+  char2Arr('O', 25, 0);
+  char2Arr('K', 19, 0);
+  char2Arr('!', 12, 0);
+  char2Arr('!', 6, 0);
+  refresh_display();
+  delay(2000);
+
+  return true;
 }

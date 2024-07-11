@@ -6,6 +6,7 @@
 #include <DS3231.h>
 #include <MD_MAX72xx.h>
 #include <TickTwo.h>
+#include <WiFiUdp.h>
 
 #include "clock-fonts.h"
 
@@ -30,6 +31,8 @@ RTClib rtc_lib;
 DateTime date_time;
 
 TickTwo ticker(timer50ms, 50, 0, MILLIS);
+
+WiFiUDP udp;
 
 unsigned short maxPosX = MAX_DEVICES * 8 - 1;            
 unsigned short LEDarr[MAX_DEVICES][8];                   
@@ -58,6 +61,8 @@ signed int d_PosX = 0;
 
 bool f_tckr1s = false;
 bool f_tckr50ms = false;
+
+unsigned int local_port = 2390;
 
 /* Two numbers + Null character */
 char str_day[3] = {'0', '0', 0};
@@ -551,6 +556,11 @@ bool connect_wifi_network()
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
 
+  Serial.println("Start UDP protocol.");
+  udp.begin(local_port);
+  Serial.print("Local port: ");
+  Serial.println(udp.localPort());
+
   clear_led_matrix_buffer();
   char2Arr('O', 25, 0);
   char2Arr('K', 19, 0);
@@ -601,11 +611,16 @@ void smartconfig_connect_ap()
       delay(500);
       Serial.print(".");
     }
-    
+
     Serial.println();
     Serial.println("WiFi connected.");
     Serial.print("IP address: ");
     Serial.println(WiFi.localIP());
+
+    Serial.println("Start UDP protocol.");
+    udp.begin(local_port);
+    Serial.print("Local port: ");
+    Serial.println(udp.localPort());
 
     clear_led_matrix_buffer();
     char2Arr('O', 25, 0);

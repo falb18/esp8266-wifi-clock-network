@@ -17,7 +17,9 @@
 #define DATA_PIN  D7  // or MOSI
 #define CS_PIN    D8  // or CS
 
-#define MAX_POS_SCROLL_X  101
+#define MAX_POS_SCROLL_X      101
+
+#define SMARTCONFIG_ATTEMPTS  30
 
 void timer50ms();
 
@@ -179,6 +181,7 @@ void timer50ms()
 
 void setup()
 {
+  bool wifi_connection_status = false;
   Serial.begin(115200);
   led_matrix.begin();
   
@@ -204,7 +207,12 @@ void setup()
   Serial.println();
 
   helpArr_init();
-  connect_wifi_network();
+  
+  wifi_connection_status = connect_wifi_network();
+  if (wifi_connection_status == false) {
+    smartconfig_connect_ap();
+  }
+
   ticker.start();
 
   request_time_date();
@@ -552,4 +560,70 @@ bool connect_wifi_network()
   delay(2000);
 
   return true;
+}
+
+void smartconfig_connect_ap()
+{
+  uint8_t wait_smartconfig = 0;
+  
+  /* Init WiFi as Station. Start SmartConfig */
+  WiFi.mode(WIFI_STA);
+  delay(500);
+  WiFi.beginSmartConfig();
+
+  /* Wait for SmartConfig packet */
+  Serial.println("Waiting for SmartConfig.");
+  clear_led_matrix_buffer();
+  char2Arr('S', 29, 0);
+  char2Arr('-', 23, -1);
+  char2Arr('c', 17, 0);
+  char2Arr('o', 12, 0);
+  char2Arr('n', 6, 0);
+  refresh_display();
+
+  while (wait_smartconfig < SMARTCONFIG_ATTEMPTS) {
+    if (WiFi.smartConfigDone()) {
+      break;
+    }
+    delay(1000);
+    wait_smartconfig++;
+    Serial.print(".");
+  }
+
+  /* Connect to WiFi network if SmartConfig received the credentials */
+  if (wait_smartconfig < SMARTCONFIG_ATTEMPTS) {
+    Serial.println("");
+    Serial.println("WiFi credentials received.");
+
+    /* Wait for connection to WiFi Access Point */
+    Serial.println("Waiting for WiFi");
+    while (WiFi.status() != WL_CONNECTED) {
+      delay(500);
+      Serial.print(".");
+    }
+    
+    Serial.println();
+    Serial.println("WiFi connected.");
+    Serial.print("IP address: ");
+    Serial.println(WiFi.localIP());
+
+    clear_led_matrix_buffer();
+    char2Arr('O', 25, 0);
+    char2Arr('K', 19, 0);
+    char2Arr('!', 12, 0);
+    char2Arr('!', 6, 0);
+    refresh_display();
+    delay(1000);
+
+  } else {
+    clear_led_matrix_buffer();
+    char2Arr('R', 25, 0);
+    char2Arr('T', 19, 0);
+    char2Arr('C', 12, 0);
+    char2Arr('!', 6, 0);
+    refresh_display();
+    Serial.println("SmartConfig failed." );
+    Serial.println("Clock uses only RTC!" );
+    delay(1000);
+  }
 }

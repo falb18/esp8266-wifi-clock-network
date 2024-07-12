@@ -5,6 +5,7 @@
 #include <ESP8266WiFi.h>
 #include <DS3231.h>
 #include <MD_MAX72xx.h>
+#include <NTP.h>
 #include <TickTwo.h>
 #include <WiFiUdp.h>
 
@@ -31,8 +32,6 @@ RTClib rtc_lib;
 DateTime date_time;
 
 TickTwo ticker(timer50ms, 50, 0, MILLIS);
-
-WiFiUDP udp;
 
 unsigned short maxPosX = MAX_DEVICES * 8 - 1;            
 unsigned short LEDarr[MAX_DEVICES][8];                   
@@ -62,7 +61,11 @@ signed int d_PosX = 0;
 bool f_tckr1s = false;
 bool f_tckr50ms = false;
 
-unsigned int local_port = 2390;
+const char *ntp_server_name = "mx.pool.ntp.org";
+IPAddress ntp_server_ip;
+
+WiFiUDP udp;
+NTP ntp_client(udp);
 
 /* Two numbers + Null character */
 char str_day[3] = {'0', '0', 0};
@@ -217,6 +220,8 @@ void setup()
   if (wifi_connection_status == false) {
     smartconfig_connect_ap();
   }
+
+  conenct_ntp_server();
 
   ticker.start();
 
@@ -556,11 +561,6 @@ bool connect_wifi_network()
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
 
-  Serial.println("Start UDP protocol.");
-  udp.begin(local_port);
-  Serial.print("Local port: ");
-  Serial.println(udp.localPort());
-
   clear_led_matrix_buffer();
   char2Arr('O', 25, 0);
   char2Arr('K', 19, 0);
@@ -617,11 +617,6 @@ void smartconfig_connect_ap()
     Serial.print("IP address: ");
     Serial.println(WiFi.localIP());
 
-    Serial.println("Start UDP protocol.");
-    udp.begin(local_port);
-    Serial.print("Local port: ");
-    Serial.println(udp.localPort());
-
     clear_led_matrix_buffer();
     char2Arr('O', 25, 0);
     char2Arr('K', 19, 0);
@@ -641,4 +636,19 @@ void smartconfig_connect_ap()
     Serial.println("Clock uses only RTC!" );
     delay(1000);
   }
+}
+
+void conenct_ntp_server(void)
+{
+  WiFi.hostByName(ntp_server_name, ntp_server_ip);
+  ntp_client.begin(ntp_server_name);
+  Serial.printf("Connect to NTP server %s, %s:%u\n", ntp_server_name,
+                  ntp_server_ip.toString().c_str(), udp.localPort());
+
+  ntp_client.isDST(false);
+  ntp_client.timeZone(-6, 0); // Central Standard Time (CST)
+  ntp_client.updateInterval(0UL);
+  ntp_client.update();
+  Serial.print(ntp_client.formattedTime("%F "));
+  Serial.println(ntp_client.formattedTime("%T"));
 }

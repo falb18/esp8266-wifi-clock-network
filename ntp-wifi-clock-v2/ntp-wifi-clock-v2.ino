@@ -71,13 +71,13 @@ NTP ntp_client(udp);
 char str_day[3] = {'0', '0', 0};
 
 const char *str_days_week[] = {
+  "SUN",
   "MON",
   "TUE",
   "WEN",
   "THU",
   "FRI",
   "SAT",
-  "SUN"
 };
 
 const char *str_months[] = {
@@ -190,6 +190,7 @@ void timer50ms()
 void setup()
 {
   bool wifi_connection_status = false;
+
   Serial.begin(115200);
   led_matrix.begin();
   
@@ -222,6 +223,15 @@ void setup()
   }
 
   conenct_ntp_server();
+  
+  /* Setup date and time, received from the NTP server, into the RTC module */
+  rtc.setSecond(ntp_client.seconds());
+  rtc.setMinute(ntp_client.minutes());
+  rtc.setHour(ntp_client.hours());
+  rtc.setDoW(ntp_client.weekDay());
+  rtc.setDate(ntp_client.day());
+  rtc.setMonth(ntp_client.month());
+  rtc.setYear(ntp_client.year());
 
   ticker.start();
 
@@ -649,6 +659,5 @@ void conenct_ntp_server(void)
   ntp_client.timeZone(-6, 0); // Central Standard Time (CST)
   ntp_client.updateInterval(0UL);
   ntp_client.update();
-  Serial.print(ntp_client.formattedTime("%F "));
-  Serial.println(ntp_client.formattedTime("%T"));
+  Serial.println(ntp_client.formattedTime("%c"));
 }

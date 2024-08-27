@@ -38,8 +38,10 @@ unsigned short LEDarr[MAX_DEVICES][8];
 unsigned short helpArrMAX[MAX_DEVICES * 8];              
 unsigned short helpArrPos[MAX_DEVICES * 8];  
 
+uint8_t hour, second, minute;
+
 /* These counters keep track of the previous and current seconds. They are needed for the vertical scrolling effect */
-byte secs_units = 0, secs_tens = 0;
+byte sec_units = 0, sec_tens = 0;
 byte sec_units_prev = 0, sec_units_curr = 0, sec_tens_prev = 0, sec_tens_curr = 0;
 bool scroll_sec_units = false, scroll_sec_tens = false;
 
@@ -273,16 +275,14 @@ void loop()
 
       // Scroll updown
       y = y2;
-      scroll_sec_units = true;
-      secs_units++;
 
       update_time_values();
 
       // Store the previous seconds
       sec_units_prev = sec_units_curr;
-      sec_units_curr = secs_units;
+      sec_units_curr = sec_units;
       sec_tens_prev = sec_tens_curr;
-      sec_tens_curr = secs_tens;
+      sec_tens_curr = sec_tens;
 
       // Store the previous minutes
       min_units_prev = min_units_curr;
@@ -298,7 +298,7 @@ void loop()
 
       f_tckr1s = false;
 
-      if ((secs_units == 5) && (secs_tens == 4)) {
+      if ((sec_units == 5) && (sec_tens == 4)) {
         f_scroll_x = true;
       }
     }
@@ -341,7 +341,7 @@ void loop()
           f_scrollend_y = true;
         }
       } else {
-        char22Arr(48 + secs_units, z_PosX - 27, 0);
+        char22Arr(48 + sec_units, z_PosX - 27, 0);
       }
 
       // Scroll the second digit in the seconds value
@@ -353,7 +353,7 @@ void loop()
         if (y == 0)
           scroll_sec_tens = false;
       } else {
-        char22Arr(48 + secs_tens, z_PosX - 23, 0);
+        char22Arr(48 + sec_tens, z_PosX - 23, 0);
       }
 
       if (scroll_min_units == true) {
@@ -452,15 +452,20 @@ void clear_led_matrix_buffer()
 
 void update_time_values()
 {
-  if (secs_units == 10) {
+  date_time = rtc_lib.now();
+  
+  scroll_sec_units = true;
+  sec_units++;
+  
+  if (sec_units == 10) {
     scroll_sec_tens = true;
-    secs_tens++;
-    secs_units = 0;
+    sec_tens++;
+    sec_units = 0;
   }
 
-  if (secs_tens == 6) {
+  if (sec_tens == 6) {
     min_units++;
-    secs_tens = 0;
+    sec_tens = 0;
     scroll_min_units = true;
   }
 
@@ -492,16 +497,16 @@ void request_time_date(void)
 {
   date_time = rtc_lib.now();
 
-  uint8_t second = date_time.second();
-  uint8_t minute = date_time.minute();
-  uint8_t hour = date_time.hour();
+  second = date_time.second();
+  minute = date_time.minute();
+  hour = date_time.hour();
   day_week = rtc.getDoW();
   day = date_time.day();
   month = date_time.month();
   year = date_time.year();
   
-  secs_units = (second % 10);
-  secs_tens = (second / 10);
+  sec_units = (second % 10);
+  sec_tens = (second / 10);
 
   min_units = (minute % 10);
   min_tens = (minute / 10);

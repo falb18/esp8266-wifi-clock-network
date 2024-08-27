@@ -206,20 +206,22 @@ void setup()
     smartconfig_connect_ap();
   }
 
-  conenct_ntp_server();
-  
-  /* Setup date and time, received from the NTP server, into the RTC module */
-  rtc.setSecond(ntp_client.seconds());
-  rtc.setMinute(ntp_client.minutes());
-  rtc.setHour(ntp_client.hours());
-  rtc.setDoW(ntp_client.weekDay());
-  rtc.setDate(ntp_client.day());
-  rtc.setMonth(ntp_client.month());
-  rtc.setYear(ntp_client.year());
+  if (WiFi.status() == WL_CONNECTED) {
+    conenct_ntp_server();
+
+    /* Setup date and time, received from the NTP server, into the RTC module */
+    rtc.setSecond(ntp_client.seconds());
+    rtc.setMinute(ntp_client.minutes());
+    rtc.setHour(ntp_client.hours());
+    rtc.setDoW(ntp_client.weekDay());
+    rtc.setDate(ntp_client.day());
+    rtc.setMonth(ntp_client.month());
+    rtc.setYear(ntp_client.year());
+  }
 
   ticker.start();
 
-  request_time_date();
+  setup_time_date();
 }
 
 void loop()
@@ -486,7 +488,7 @@ void update_time_values()
   }
 }
 
-void request_time_date(void)
+void setup_time_date(void)
 {
   date_time = rtc_lib.now();
 

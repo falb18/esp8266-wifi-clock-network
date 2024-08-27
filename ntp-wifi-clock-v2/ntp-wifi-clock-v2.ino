@@ -62,6 +62,7 @@ signed int d_PosX = 0;
 
 bool f_tckr1s = false;
 bool f_tckr50ms = false;
+bool is_rtc_sync = false;
 
 const char *ntp_server_name = "mx.pool.ntp.org";
 IPAddress ntp_server_ip;
@@ -72,30 +73,11 @@ NTP ntp_client(udp);
 /* Two numbers + Null character */
 char str_day[3] = {'0', '0', 0};
 
-const char *str_days_week[] = {
-  "SUN",
-  "MON",
-  "TUE",
-  "WEN",
-  "THU",
-  "FRI",
-  "SAT",
-};
+const char *str_days_week[] = {"SUN", "MON", "TUE", "WEN", "THU", "FRI", "SAT"};
 
 const char *str_months[] = {
   NULL, // This is left null since the range of the values for the month are 1 - 12.
-  "JAN",
-  "FEB",
-  "MAR",
-  "APR",
-  "MAY",
-  "JUN",
-  "JUL",
-  "AUG",
-  "SEP",
-  "OCT",
-  "NOV",
-  "DEC"
+  "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"
 };
 
 /* Two numbers + Null character */
@@ -271,7 +253,18 @@ void loop()
 
     ticker.update();
 
+    /* Synchronize RTC module every day aprox. at midnight (00:20:00) */
+    if ((date_time.hour() == 0) && (date_time.minute() == 20) && (date_time.second() == 0)) {
+      if (is_rtc_sync == false) {
+        request_time_ntp();
+        clear_led_matrix_buffer();
+        is_rtc_sync = true;
+      }
+    }
+
     if (f_tckr1s == true) {
+
+      is_rtc_sync = false; // Reset the rtc synchronization for the next request at midnight
 
       // Scroll updown
       y = y2;
@@ -665,4 +658,20 @@ void conenct_ntp_server(void)
   ntp_client.updateInterval(0UL);
   ntp_client.update();
   Serial.println(ntp_client.formattedTime("%c"));
+}
+
+void request_time_ntp(void)
+{
+  if (WiFi.status() == WL_CONNECTED) {
+    ntp_client.update();
+    Serial.println("Request network time successful");
+    Serial.printf("Time: %s\n",ntp_client.formattedTime("%c"));
+    rtc.setSecond(ntp_client.seconds());
+    rtc.setMinute(ntp_client.minutes());
+    rtc.setHour(ntp_client.hours());
+    rtc.setDoW(ntp_client.weekDay());
+    rtc.setDate(ntp_client.day());
+    rtc.setMonth(ntp_client.month());
+    rtc.setYear(ntp_client.year());
+  }
 }
